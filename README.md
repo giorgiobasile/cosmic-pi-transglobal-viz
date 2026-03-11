@@ -4,7 +4,7 @@ Polar stereographic visualization of cosmic ray muon measurements collected duri
 
 <p align="center">
   <picture>
-    <img src="cosmic_pi_transglobal_exp.png" alt="Cosmic Pi — Transglobal Car Expedition" width="800" style="margin-top: -6%; clip-path: inset(6% 0 0 0);">
+    <img src="cosmic_pi_transglobal_exp.png" alt="Cosmic Pi — Transglobal Car Expedition" width="800">
   </picture>
 </p>
 
