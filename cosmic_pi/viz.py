@@ -195,9 +195,12 @@ def plot_polar_maps(
 # --- Entry point ---
 
 
+OUTPUT_FILE = Path("cosmic_pi_transglobal_exp.png")
+
+
 def generate(
     input_dir: Path = Path("parquet"),
-    output_dir: Path = Path("output"),
+    output: Path = OUTPUT_FILE,
 ):
     """Generate polar map visualizations from GeoParquet data."""
     required = [
@@ -211,8 +214,6 @@ def generate(
         msg = f"Missing parquet files in {input_dir}/: {', '.join(missing)}"
         raise SystemExit(f"Error: {msg}\nRun 'cosmic-pi ingest' first.")
 
-    output_dir.mkdir(parents=True, exist_ok=True)
-
     print("Loading route data...")
     north_route, south_route = load_route_data(input_dir)
 
@@ -221,8 +222,4 @@ def generate(
 
     all_routes = build_routes(north_route, south_route)
     print(f"Route pts: {sum(len(r) for _, r in all_routes)}, Rate pts: {len(all_freq)}")
-    plot_polar_maps(
-        all_routes,
-        all_freq,
-        output_dir / "cosmic_pi_transglobal_exp.png",
-    )
+    plot_polar_maps(all_routes, all_freq, output)

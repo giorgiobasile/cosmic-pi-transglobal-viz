@@ -4,7 +4,7 @@ Polar stereographic visualization of cosmic ray muon measurements collected duri
 
 <p align="center">
   <picture>
-    <img src="output/cosmic_pi_transglobal_exp.png" alt="Cosmic Pi — Transglobal Car Expedition" width="800" style="margin-top: -6%; clip-path: inset(6% 0 0 0);">
+    <img src="cosmic_pi_transglobal_exp.png" alt="Cosmic Pi — Transglobal Car Expedition" width="800" style="margin-top: -6%; clip-path: inset(6% 0 0 0);">
   </picture>
 </p>
 
@@ -58,7 +58,7 @@ uv run cosmic-pi ingest
 uv run cosmic-pi viz
 ```
 
-Produces `output/cosmic_pi_transglobal_exp.png` with north and south polar stereographic projections side by side.
+Produces `cosmic_pi_transglobal_exp.png` with north and south polar stereographic projections side by side.
 
 ### Other commands
 

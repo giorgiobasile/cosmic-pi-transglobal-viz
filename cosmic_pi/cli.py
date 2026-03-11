@@ -94,14 +94,11 @@ def viz(
     parquet_dir: Annotated[
         Path, typer.Option(help="Directory with parquet files")
     ] = Path("parquet"),
-    output_dir: Annotated[Path, typer.Option(help="Output directory for PNGs")] = Path(
-        "output"
-    ),
 ):
     """Generate polar map visualizations from GeoParquet data."""
     from .viz import generate
 
-    generate(input_dir=parquet_dir, output_dir=output_dir)
+    generate(input_dir=parquet_dir)
 
 
 @app.command()

@@ -21,8 +21,7 @@ parquet/                           # GeoParquet files (gitignored)
   cosmic_pi_south_pole.parquet     # Sensor GeoParquet — 9.6M rows, ~164MB
   cosmic_pi_north_pole_freq.parquet # Freq GeoParquet — 13.3M rows, ~120MB
   cosmic_pi_south_pole_freq.parquet # Freq GeoParquet — 2.7M rows, ~30MB
-output/                            # Output directory
-  cosmic_pi_transglobal_exp.png    # Polar map visualization (tracked in git)
+cosmic_pi_transglobal_exp.png      # Polar map visualization (tracked in git)
 ```
 
 ## Commands
