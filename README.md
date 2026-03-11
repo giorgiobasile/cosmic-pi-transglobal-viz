@@ -22,7 +22,7 @@ Polar stereographic visualization of cosmic ray muon measurements collected duri
 
 ## Data
 
-The detectors log to **InfluxDB 1.x** and the datasets are distributed as portable backups (opaque binary files). Each dataset contains two measurement streams:
+The detectors log to **InfluxDB 1.x** and the datasets are distributed as portable backups (opaque binary files). Each dataset contains several measurement streams; the two used by this project are:
 
 - **`CosmicPiV1.8.1`** — environment stream (~5 Hz): GPS position, temperature, pressure, humidity, altitude, accelerometer, magnetometer
 - **`CosmicPiV1.8.1_freq`** — cosmic ray events: muon detection count per interval + geohash-encoded location
