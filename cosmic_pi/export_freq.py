@@ -22,7 +22,16 @@ def rows_to_gdf(rows: list[list[str]], columns: list[str]) -> gpd.GeoDataFrame:
     df = pd.DataFrame(rows, columns=columns)
     df["time"] = pd.to_datetime(pd.to_numeric(df["time"]), unit="ns")
     df["event_count"] = pd.to_numeric(df["event_count"], errors="coerce")
-    coords = df["geohash"].apply(lambda gh: geohash.decode(gh) if gh else (None, None))
+
+    def _decode_geohash(gh):
+        if not gh:
+            return None, None
+        try:
+            return geohash.decode(gh)
+        except Exception:
+            return None, None
+
+    coords = df["geohash"].apply(_decode_geohash)
     df["lat"] = coords.apply(lambda c: float(c[0]) if c[0] is not None else None)
     df["lon"] = coords.apply(lambda c: float(c[1]) if c[1] is not None else None)
     geometry = gpd.points_from_xy(df["lon"], df["lat"])

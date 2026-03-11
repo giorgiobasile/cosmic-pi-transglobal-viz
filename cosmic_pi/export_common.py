@@ -112,12 +112,12 @@ def inject_geo_metadata(path: str, geo_metadata: bytes):
     pq.write_table(table, path)
 
 
-def write_batch(writer_holder, gdf, output_path, geo_meta_holder):
+def write_batch(writer_state, gdf, output_path, geo_meta_state):
     table = gdf_to_arrow(gdf)
-    if writer_holder[0] is None:
-        geo_meta_holder[0] = build_geo_metadata(gdf)
-        writer_holder[0] = pq.ParquetWriter(output_path, table.schema)
-    writer_holder[0].write_table(table)
+    if writer_state[0] is None:
+        geo_meta_state[0] = build_geo_metadata(gdf)
+        writer_state[0] = pq.ParquetWriter(output_path, table.schema)
+    writer_state[0].write_table(table)
 
 
 def export_dataset(url: str, db: str, output_path: str, config: ExportConfig):
