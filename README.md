@@ -42,6 +42,14 @@ The project is packaged as a [Typer](https://typer.tiangolo.com/) CLI managed wi
 uv run cosmic-pi --help
 ```
 
+### Development
+
+Pre-commit hooks run [ruff](https://docs.astral.sh/ruff/) linting and formatting on every commit:
+
+```bash
+pre-commit install
+```
+
 ### From Zenodo backups (full pipeline)
 
 If you're starting from the raw Zenodo zip files and don't have InfluxDB set up:
