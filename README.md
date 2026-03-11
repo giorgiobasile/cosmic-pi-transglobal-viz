@@ -17,24 +17,17 @@ Polar stereographic visualization of cosmic ray muon measurements collected duri
 
 ## Datasets
 
-- **North Pole (2024):** [Cosmic Pi North Pole Dataset 2024](https://zenodo.org/records/13310276) — First ground-level muon measurements at the North Pole, collected traveling across North America to the North Pole and back to Greenland. Authors: James Devine (CERN), Etam Noah Messomo. DOI: 10.5281/zenodo.13310276
-- **South Pole (2024/2025):** [Cosmic Pi South Pole Dataset 2024/2025](https://zenodo.org/records/18774704) — First ground-level muon measurements through Antarctica, collected traveling from Cape Town through Antarctica and into South and Central America. Authors: Etam Noah Messomo, James Devine (CERN). DOI: 10.5281/zenodo.18774704
+- **North Pole (2024):** [Cosmic Pi North Pole Dataset 2024](https://zenodo.org/records/13310276) — First ground-level muon measurements at the North Pole, collected traveling across North America to the North Pole and back to Greenland. Authors: James Devine (CERN), Etam Noah Messomo. [DOI: 10.5281/zenodo.13310276](https://doi.org/10.5281/zenodo.13310276)
+- **South Pole (2024/2025):** [Cosmic Pi South Pole Dataset 2024/2025](https://zenodo.org/records/18774704) — First ground-level muon measurements through Antarctica, collected traveling from Cape Town through Antarctica and into South and Central America. Authors: Etam Noah Messomo, James Devine (CERN). [DOI: 10.5281/zenodo.18774704](https://doi.org/10.5281/zenodo.18774704)
 
 ## Data
 
-The detectors log to **InfluxDB 1.x** and the datasets are distributed as portable backups (opaque binary files).
-
-| Dataset | Sensor rows | Freq rows | Zip size |
-|---------|------------|-----------|----------|
-| North Pole | 44.9M | 13.3M | 6.9 GB |
-| South Pole | 9.6M | 2.7M | 533 MB |
-
-Each dataset contains multiple measurement streams; the two used by this project are:
+The detectors log to **InfluxDB 1.x** and the datasets are distributed as portable backups. Each contains multiple measurement streams; the two used by this project are:
 
 - **`CosmicPiV1.8.1`** — environment stream (~5 Hz): GPS position, temperature, pressure, humidity, altitude, accelerometer, magnetometer
 - **`CosmicPiV1.8.1_freq`** — cosmic ray events: muon detection count per interval + geohash-encoded location
 
-The `ingest` command starts a temporary InfluxDB container, restores the backups, and exports everything to [GeoParquet](https://geoparquet.org/) files.
+Data is exported to [GeoParquet](https://geoparquet.org/) for local analysis.
 
 ## Usage
 
@@ -42,14 +35,6 @@ The project is packaged as a [Typer](https://typer.tiangolo.com/) CLI managed wi
 
 ```bash
 uv run cosmic-pi --help
-```
-
-### Development
-
-Pre-commit hooks run [ruff](https://docs.astral.sh/ruff/) linting and formatting on every commit:
-
-```bash
-pre-commit install
 ```
 
 ### From Zenodo backups (full pipeline)
@@ -81,4 +66,12 @@ uv run cosmic-pi export --dataset north --kind freq
 
 # Stop InfluxDB and remove persisted data to free disk space
 uv run cosmic-pi clean
+```
+
+## Development
+
+Pre-commit hooks run [ruff](https://docs.astral.sh/ruff/) linting and formatting on every commit:
+
+```bash
+pre-commit install
 ```
