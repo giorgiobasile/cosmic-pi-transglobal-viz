@@ -52,13 +52,27 @@ Downloads the two zip files from [Zenodo](https://zenodo.org/) (~7.4 GB total) i
 
 ### 2. Ingest data
 
-Requires [Docker](https://www.docker.com/). Starts InfluxDB, restores portable backups, exports to [GeoParquet](https://geoparquet.org/) in `parquet/`, and stops the container. InfluxDB data is persisted locally so re-runs skip the restore step.
+Requires [Docker](https://www.docker.com/). Extracts zip backups, starts InfluxDB, and restores the databases. Data is persisted locally so re-runs skip the restore step.
 
 ```bash
 uv run cosmic-pi ingest
 ```
 
-### 3. Generate visualization
+### 3. Export to GeoParquet
+
+Exports from the running InfluxDB to [GeoParquet](https://geoparquet.org/) files in `parquet/`. Skips if files already exist (use `--overwrite` to force).
+
+```bash
+uv run cosmic-pi export
+```
+
+### 4. Stop InfluxDB
+
+```bash
+uv run cosmic-pi stop
+```
+
+### 5. Generate visualization
 
 ```bash
 uv run cosmic-pi viz
@@ -69,12 +83,9 @@ Produces `cosmic_pi_transglobal_exp.png` with north and south polar stereographi
 ### Other commands
 
 ```bash
-# Re-export from a running InfluxDB (e.g. after ingest --skip-teardown)
-uv run cosmic-pi export
-
 # Export a specific dataset/kind
 uv run cosmic-pi export --dataset north --kind freq
 
-# Remove persisted InfluxDB data to free disk space
+# Stop InfluxDB and remove persisted data to free disk space
 uv run cosmic-pi clean
 ```

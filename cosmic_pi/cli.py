@@ -28,22 +28,26 @@ def ingest(
         "input"
     ),
     skip_extract: Annotated[bool, typer.Option(help="Skip zip extraction")] = False,
-    skip_teardown: Annotated[
-        bool, typer.Option(help="Leave InfluxDB running after export")
-    ] = False,
-    overwrite: Annotated[
-        bool, typer.Option(help="Re-export parquet files even if they exist")
-    ] = False,
 ):
-    """Full pipeline: extract zips, start InfluxDB, restore, export, teardown."""
-    from .ingest import run
+    """Extract zips, start InfluxDB, and restore backups.
 
-    run(
-        input_dir,
-        skip_extract=skip_extract,
-        skip_teardown=skip_teardown,
-        overwrite=overwrite,
+    Run 'cosmic-pi export' afterwards to export data to GeoParquet.
+    Run 'cosmic-pi stop' when done with InfluxDB.
+    """
+    from .ingest import (
+        extract_backups,
+        restore_backups,
+        start_influxdb,
+        wait_for_influxdb,
     )
+
+    if not skip_extract:
+        extract_backups(input_dir)
+    start_influxdb()
+    wait_for_influxdb()
+    restore_backups()
+    print("InfluxDB is running with restored databases.")
+    print("Next: 'cosmic-pi export' to export to GeoParquet.")
 
 
 @app.command()
@@ -58,11 +62,13 @@ def export(
     influxdb_url: Annotated[
         str, typer.Option(help="InfluxDB URL")
     ] = "http://localhost:8086",
+    overwrite: Annotated[
+        bool, typer.Option(help="Re-export parquet files even if they exist")
+    ] = False,
 ):
-    """Export data from a running InfluxDB to GeoParquet.
+    """Export data from InfluxDB to GeoParquet.
 
-    Requires a running InfluxDB instance with restored backups.
-    Use 'cosmic-pi ingest --skip-teardown' to leave it running.
+    Requires a running InfluxDB with restored backups ('cosmic-pi ingest').
     """
     import requests
 
@@ -71,30 +77,18 @@ def export(
     except requests.ConnectionError:
         raise SystemExit(
             f"Error: Cannot connect to InfluxDB at {influxdb_url}.\n"
-            "Start it with 'docker compose up -d influxdb' or run 'cosmic-pi ingest'."
+            "Run 'cosmic-pi ingest' first."
         )
 
-    from .export_common import export_dataset
-    from .export_freq import DATASETS as FREQ_DATASETS
-    from .export_freq import FREQ_CONFIG
-    from .export_sensor import DATASETS as SENSOR_DATASETS
-    from .export_sensor import SENSOR_CONFIG
+    from .ingest import export_all
 
-    configs = []
-    if kind in ("all", "sensor"):
-        for name, cfg in SENSOR_DATASETS.items():
-            if dataset in ("all", name):
-                output = str(parquet_dir / Path(cfg["output"]).name)
-                configs.append((name, "sensor", cfg["db"], output, SENSOR_CONFIG))
-    if kind in ("all", "freq"):
-        for name, cfg in FREQ_DATASETS.items():
-            if dataset in ("all", name):
-                output = str(parquet_dir / Path(cfg["output"]).name)
-                configs.append((name, "freq", cfg["db"], output, FREQ_CONFIG))
-
-    for name, kind_label, db, output, config in configs:
-        print(f"Exporting {name} {kind_label} ({db})...")
-        export_dataset(influxdb_url, db, output, config)
+    export_all(
+        parquet_dir=parquet_dir,
+        dataset=dataset,
+        kind=kind,
+        influxdb_url=influxdb_url,
+        overwrite=overwrite,
+    )
 
 
 @app.command()
@@ -110,12 +104,23 @@ def viz(
 
 
 @app.command()
+def stop():
+    """Stop the InfluxDB container."""
+    from .ingest import teardown
+
+    teardown()
+
+
+@app.command()
 def clean(
     input_dir: Annotated[
         Path, typer.Option(help="Directory with InfluxDB data")
     ] = Path("input"),
 ):
-    """Remove persisted InfluxDB data to free disk space."""
+    """Remove persisted InfluxDB data to free disk space.
+
+    Stops InfluxDB first if running.
+    """
     from .ingest import clean as do_clean
 
     do_clean(input_dir)

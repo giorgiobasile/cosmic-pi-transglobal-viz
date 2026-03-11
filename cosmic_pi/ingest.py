@@ -174,7 +174,14 @@ def _all_parquet_files(parquet_dir: Path) -> list[Path]:
     return paths
 
 
-def export_all(parquet_dir: Path = Path("parquet"), *, overwrite: bool = False):
+def export_all(
+    parquet_dir: Path = Path("parquet"),
+    *,
+    dataset: str = "all",
+    kind: str = "all",
+    influxdb_url: str = INFLUXDB_URL,
+    overwrite: bool = False,
+):
     existing = [p for p in _all_parquet_files(parquet_dir) if p.exists()]
     if existing and not overwrite:
         print("Parquet files already exist, skipping export:")
@@ -184,17 +191,21 @@ def export_all(parquet_dir: Path = Path("parquet"), *, overwrite: bool = False):
         return
 
     parquet_dir.mkdir(parents=True, exist_ok=True)
-    print("Exporting sensor data to GeoParquet...")
-    for name, cfg in SENSOR_DATASETS.items():
-        output = str(parquet_dir / Path(cfg["output"]).name)
-        print(f"  {name} ({cfg['db']})...")
-        export_dataset(INFLUXDB_URL, cfg["db"], output, SENSOR_CONFIG)
+    if kind in ("all", "sensor"):
+        print("Exporting sensor data to GeoParquet...")
+        for name, cfg in SENSOR_DATASETS.items():
+            if dataset in ("all", name):
+                output = str(parquet_dir / Path(cfg["output"]).name)
+                print(f"  {name} ({cfg['db']})...")
+                export_dataset(influxdb_url, cfg["db"], output, SENSOR_CONFIG)
 
-    print("Exporting freq data to GeoParquet...")
-    for name, cfg in FREQ_DATASETS.items():
-        output = str(parquet_dir / Path(cfg["output"]).name)
-        print(f"  {name} ({cfg['db']})...")
-        export_dataset(INFLUXDB_URL, cfg["db"], output, FREQ_CONFIG)
+    if kind in ("all", "freq"):
+        print("Exporting freq data to GeoParquet...")
+        for name, cfg in FREQ_DATASETS.items():
+            if dataset in ("all", name):
+                output = str(parquet_dir / Path(cfg["output"]).name)
+                print(f"  {name} ({cfg['db']})...")
+                export_dataset(influxdb_url, cfg["db"], output, FREQ_CONFIG)
 
 
 def teardown():
@@ -203,7 +214,8 @@ def teardown():
 
 
 def clean(input_dir: Path):
-    """Remove InfluxDB data directory to free disk space."""
+    """Stop InfluxDB and remove persisted data directory."""
+    teardown()
     data_dir = input_dir / INFLUXDB_DATA_DIR
     if data_dir.exists():
         print(f"Removing {data_dir}...")
@@ -211,21 +223,3 @@ def clean(input_dir: Path):
         print("InfluxDB data cleaned.")
     else:
         print("No InfluxDB data to clean.")
-
-
-def run(
-    input_dir: Path,
-    *,
-    skip_extract: bool = False,
-    skip_teardown: bool = False,
-    overwrite: bool = False,
-):
-    if not skip_extract:
-        extract_backups(input_dir)
-    start_influxdb()
-    wait_for_influxdb()
-    restore_backups()
-    export_all(overwrite=overwrite)
-    if not skip_teardown:
-        teardown()
-    print("Done. GeoParquet files are in parquet/")
