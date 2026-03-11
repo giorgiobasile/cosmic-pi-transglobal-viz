@@ -42,21 +42,6 @@ The project is packaged as a [Typer](https://typer.tiangolo.com/) CLI managed wi
 uv run cosmic-pi --help
 ```
 
-```
- Usage: cosmic-pi [OPTIONS] COMMAND [ARGS]...
-
- Cosmic Pi Transglobal Expedition — data pipeline and visualization.
-
-╭─ Commands ───────────────────────────────────────────────────────────────────╮
-│ download  Download dataset zip files from Zenodo.                            │
-│ ingest    Full pipeline: extract zips, start InfluxDB, restore, export,      │
-│           teardown.                                                          │
-│ export    Export data from a running InfluxDB to GeoParquet.                 │
-│ viz       Generate polar map visualizations from GeoParquet data.            │
-│ clean     Remove persisted InfluxDB data to free disk space.                 │
-╰──────────────────────────────────────────────────────────────────────────────╯
-```
-
 ### 1. Download datasets
 
 ```bash
