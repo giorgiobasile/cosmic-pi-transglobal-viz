@@ -22,15 +22,17 @@ Polar stereographic visualization of cosmic ray muon measurements collected duri
 
 ## Data
 
-The detectors log to **InfluxDB 1.x** and the datasets are distributed as portable backups (opaque binary files). Each dataset contains several measurement streams; the two used by this project are:
-
-- **`CosmicPiV1.8.1`** — environment stream (~5 Hz): GPS position, temperature, pressure, humidity, altitude, accelerometer, magnetometer
-- **`CosmicPiV1.8.1_freq`** — cosmic ray events: muon detection count per interval + geohash-encoded location
+The detectors log to **InfluxDB 1.x** and the datasets are distributed as portable backups (opaque binary files).
 
 | Dataset | Sensor rows | Freq rows | Zip size |
 |---------|------------|-----------|----------|
 | North Pole | 44.9M | 13.3M | 6.9 GB |
 | South Pole | 9.6M | 2.7M | 533 MB |
+
+Each dataset contains several measurement streams; the two used by this project are:
+
+- **`CosmicPiV1.8.1`** — environment stream (~5 Hz): GPS position, temperature, pressure, humidity, altitude, accelerometer, magnetometer
+- **`CosmicPiV1.8.1_freq`** — cosmic ray events: muon detection count per interval + geohash-encoded location
 
 The `ingest` command starts a temporary InfluxDB container, restores the backups, and exports everything to [GeoParquet](https://geoparquet.org/) files.
 
