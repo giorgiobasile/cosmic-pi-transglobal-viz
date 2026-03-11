@@ -29,18 +29,21 @@ cosmic_pi_transglobal_exp.png      # Polar map visualization (tracked in git)
 # Download datasets from Zenodo (~7.4 GB)
 uv run cosmic-pi download
 
-# Full data pipeline (requires Docker; re-runs skip restore if data persists)
-uv run cosmic-pi ingest
+# Extract, start InfluxDB, restore backups (requires Docker)
+uv run cosmic-pi influx-restore
 
-# Just the export step (requires running InfluxDB)
-uv run cosmic-pi export
-uv run cosmic-pi export --dataset north --kind sensor
+# Export to GeoParquet (requires running InfluxDB)
+uv run cosmic-pi gpq-export
+uv run cosmic-pi gpq-export --dataset north --kind sensor
 
 # Generate visualization (requires parquet/*.parquet)
 uv run cosmic-pi viz
 
+# Stop InfluxDB
+uv run cosmic-pi influx-stop
+
 # Remove persisted InfluxDB data
-uv run cosmic-pi clean
+uv run cosmic-pi influx-clean
 ```
 
 ## Data pipeline

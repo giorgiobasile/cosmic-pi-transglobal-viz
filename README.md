@@ -43,9 +43,9 @@ If you're starting from the raw Zenodo zip files and don't have InfluxDB set up 
 
 ```bash
 uv run cosmic-pi download                # download zips from Zenodo (~7.4 GB)
-uv run cosmic-pi ingest                  # extract, start InfluxDB (Docker), restore backups
-uv run cosmic-pi export                  # export to GeoParquet
-uv run cosmic-pi stop                    # stop InfluxDB when done
+uv run cosmic-pi influx-restore          # extract, start InfluxDB (Docker), restore backups
+uv run cosmic-pi gpq-export              # export to GeoParquet
+uv run cosmic-pi influx-stop             # stop InfluxDB when done
 uv run cosmic-pi viz                     # generate visualization
 ```
 
@@ -54,7 +54,7 @@ uv run cosmic-pi viz                     # generate visualization
 If you already have the data in a running InfluxDB instance, skip straight to export:
 
 ```bash
-uv run cosmic-pi export --influxdb-url http://your-host:8086 --db your_database_name
+uv run cosmic-pi gpq-export --influxdb-url http://your-host:8086 --db your_database_name
 uv run cosmic-pi viz
 ```
 
@@ -62,10 +62,10 @@ uv run cosmic-pi viz
 
 ```bash
 # Export a specific dataset/kind
-uv run cosmic-pi export --dataset north --kind freq
+uv run cosmic-pi gpq-export --dataset north --kind freq
 
 # Stop InfluxDB and remove persisted data to free disk space
-uv run cosmic-pi clean
+uv run cosmic-pi influx-clean
 ```
 
 ## Development
