@@ -32,7 +32,7 @@ The detectors log to **InfluxDB 1.x** and the datasets are distributed as portab
 | North Pole | 44.9M | 13.3M | 6.9 GB |
 | South Pole | 9.6M | 2.7M | 533 MB |
 
-The `ingest` command starts a temporary InfluxDB container, restores the backups, and exports everything to [GeoParquet](https://geoparquet.org/) files for fast local analysis.
+The `ingest` command starts a temporary InfluxDB container, restores the backups, and exports everything to [GeoParquet](https://geoparquet.org/) files — a one-time step, since InfluxDB 1.x only supports slow CSV streaming for bulk export.
 
 ## Usage
 
