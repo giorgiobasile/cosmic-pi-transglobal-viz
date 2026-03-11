@@ -31,11 +31,19 @@ def ingest(
     skip_teardown: Annotated[
         bool, typer.Option(help="Leave InfluxDB running after export")
     ] = False,
+    overwrite: Annotated[
+        bool, typer.Option(help="Re-export parquet files even if they exist")
+    ] = False,
 ):
     """Full pipeline: extract zips, start InfluxDB, restore, export, teardown."""
     from .ingest import run
 
-    run(input_dir, skip_extract=skip_extract, skip_teardown=skip_teardown)
+    run(
+        input_dir,
+        skip_extract=skip_extract,
+        skip_teardown=skip_teardown,
+        overwrite=overwrite,
+    )
 
 
 @app.command()

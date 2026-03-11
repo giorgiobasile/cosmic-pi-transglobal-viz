@@ -164,7 +164,25 @@ def restore_backups():
             print(f"  Restored {r['target_db']}.")
 
 
-def export_all(parquet_dir: Path = Path("parquet")):
+def _all_parquet_files(parquet_dir: Path) -> list[Path]:
+    """Return expected parquet output paths."""
+    paths = []
+    for cfg in SENSOR_DATASETS.values():
+        paths.append(parquet_dir / Path(cfg["output"]).name)
+    for cfg in FREQ_DATASETS.values():
+        paths.append(parquet_dir / Path(cfg["output"]).name)
+    return paths
+
+
+def export_all(parquet_dir: Path = Path("parquet"), *, overwrite: bool = False):
+    existing = [p for p in _all_parquet_files(parquet_dir) if p.exists()]
+    if existing and not overwrite:
+        print("Parquet files already exist, skipping export:")
+        for p in existing:
+            print(f"  {p}")
+        print("Use --overwrite to re-export.")
+        return
+
     parquet_dir.mkdir(parents=True, exist_ok=True)
     print("Exporting sensor data to GeoParquet...")
     for name, cfg in SENSOR_DATASETS.items():
@@ -200,13 +218,14 @@ def run(
     *,
     skip_extract: bool = False,
     skip_teardown: bool = False,
+    overwrite: bool = False,
 ):
     if not skip_extract:
         extract_backups(input_dir)
     start_influxdb()
     wait_for_influxdb()
     restore_backups()
-    export_all()
+    export_all(overwrite=overwrite)
     if not skip_teardown:
         teardown()
     print("Done. GeoParquet files are in parquet/")
