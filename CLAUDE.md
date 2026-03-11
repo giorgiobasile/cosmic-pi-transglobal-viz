@@ -30,7 +30,7 @@ cosmic_pi_transglobal_exp.png      # Polar map visualization (tracked in git)
 uv run cosmic-pi download
 
 # Extract, start InfluxDB, restore backups (requires Docker)
-uv run cosmic-pi influx-restore
+uv run cosmic-pi influxdb-restore
 
 # Export to GeoParquet (requires running InfluxDB)
 uv run cosmic-pi gpq-export
@@ -40,10 +40,10 @@ uv run cosmic-pi gpq-export --dataset north --kind sensor
 uv run cosmic-pi viz
 
 # Stop InfluxDB
-uv run cosmic-pi influx-stop
+uv run cosmic-pi influxdb-stop
 
 # Remove persisted InfluxDB data
-uv run cosmic-pi influx-clean
+uv run cosmic-pi influxdb-clean
 ```
 
 ## Data pipeline

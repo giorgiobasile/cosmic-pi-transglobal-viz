@@ -23,7 +23,7 @@ def download(
 
 
 @app.command()
-def influx_restore(
+def influxdb_restore(
     input_dir: Annotated[Path, typer.Option(help="Directory with zip backups")] = Path(
         "input"
     ),
@@ -32,7 +32,7 @@ def influx_restore(
     """Extract zips, start InfluxDB, and restore backups.
 
     Run 'cosmic-pi gpq-export' afterwards to export data to GeoParquet.
-    Run 'cosmic-pi influx-stop' when done with InfluxDB.
+    Run 'cosmic-pi influxdb-stop' when done with InfluxDB.
     """
     from .ingest import (
         extract_backups,
@@ -84,7 +84,7 @@ def gpq_export(
     except requests.ConnectionError:
         raise SystemExit(
             f"Error: Cannot connect to InfluxDB at {influxdb_url}.\n"
-            "Run 'cosmic-pi influx-restore' to start a local instance, or use\n"
+            "Run 'cosmic-pi influxdb-restore' to start a local instance, or use\n"
             "--influxdb-url to point at an existing InfluxDB installation."
         )
 
@@ -113,7 +113,7 @@ def viz(
 
 
 @app.command()
-def influx_stop():
+def influxdb_stop():
     """Stop the InfluxDB container."""
     from .ingest import teardown
 
@@ -121,7 +121,7 @@ def influx_stop():
 
 
 @app.command()
-def influx_clean(
+def influxdb_clean(
     input_dir: Annotated[
         Path, typer.Option(help="Directory with InfluxDB data")
     ] = Path("input"),
