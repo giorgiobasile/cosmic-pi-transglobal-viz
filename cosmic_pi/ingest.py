@@ -16,6 +16,7 @@ from .export_sensor import SENSOR_CONFIG
 
 INFLUXDB_URL = "http://localhost:8086"
 INFLUXDB_DATA_DIR = "influxdb-data"
+CONTAINER_NAME = "cosmic-pi-influxdb"
 
 NORTH_ZIP = "cosmic_pi_polar_integrated_all.zip"
 SOUTH_ZIP = "cosmicpisouthpole.zip"
@@ -84,25 +85,60 @@ def extract_backups(input_dir: Path):
             zf.extractall(input_dir)
 
 
-def start_influxdb():
+def _container_running() -> bool:
+    result = subprocess.run(
+        ["docker", "inspect", "-f", "{{.State.Running}}", CONTAINER_NAME],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0 and result.stdout.strip() == "true"
+
+
+def start_influxdb(input_dir: Path):
+    if _container_running():
+        print("InfluxDB container already running.")
+        return
+
+    # Remove stopped container if it exists
+    subprocess.run(
+        ["docker", "rm", "-f", CONTAINER_NAME],
+        capture_output=True,
+    )
+
+    data_vol = str((input_dir / INFLUXDB_DATA_DIR).resolve())
+    backups_vol = str(input_dir.resolve())
+
     print("Starting InfluxDB...")
-    subprocess.run(["docker", "compose", "up", "-d", "influxdb"], check=True)
+    subprocess.run(
+        [
+            "docker",
+            "run",
+            "-d",
+            "--name",
+            CONTAINER_NAME,
+            "-p",
+            "8086:8086",
+            "-v",
+            f"{data_vol}:/var/lib/influxdb",
+            "-v",
+            f"{backups_vol}:/backups:ro",
+            "-e",
+            "INFLUXDB_DATA_CACHE_MAX_MEMORY_SIZE=2g",
+            "-e",
+            "INFLUXDB_DATA_MAX_SERIES_PER_DATABASE=0",
+            "-m",
+            "8g",
+            "influxdb:1.8",
+        ],
+        check=True,
+    )
 
 
 def wait_for_influxdb():
     print("Waiting for InfluxDB to be healthy...")
     while True:
         result = subprocess.run(
-            [
-                "docker",
-                "compose",
-                "exec",
-                "-T",
-                "influxdb",
-                "influx",
-                "-execute",
-                "SHOW DATABASES",
-            ],
+            ["docker", "exec", CONTAINER_NAME, "influx", "-execute", "SHOW DATABASES"],
             capture_output=True,
             text=True,
         )
@@ -140,10 +176,8 @@ def restore_backups():
         result = subprocess.run(
             [
                 "docker",
-                "compose",
                 "exec",
-                "-T",
-                "influxdb",
+                CONTAINER_NAME,
                 "influxd",
                 "restore",
                 "-portable",
@@ -210,7 +244,7 @@ def export_all(
 
 def teardown():
     print("Stopping InfluxDB...")
-    subprocess.run(["docker", "compose", "down"], check=True)
+    subprocess.run(["docker", "rm", "-f", CONTAINER_NAME], capture_output=True)
 
 
 def clean(input_dir: Path):

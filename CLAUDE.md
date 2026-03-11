@@ -12,7 +12,6 @@ cosmic_pi/                         # Python package
   export_sensor.py                 # Sensor-specific export config (CosmicPiV1.8.1)
   export_freq.py                   # Freq-specific export config (CosmicPiV1.8.1_freq)
   viz.py                           # Visualization — data loading, transforms, plotting
-docker-compose.yml                 # InfluxDB 1.8 container (8GB memory limit, bind-mount volume)
 input/                             # Data directory (gitignored)
   *.zip                            # Raw InfluxDB 1.x portable backups from Zenodo
   influxdb-data/                   # Persisted InfluxDB data (survives container restarts)

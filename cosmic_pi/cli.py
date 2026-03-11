@@ -43,7 +43,7 @@ def ingest(
 
     if not skip_extract:
         extract_backups(input_dir)
-    start_influxdb()
+    start_influxdb(input_dir)
     wait_for_influxdb()
     restore_backups()
     print("InfluxDB is running with restored databases.")
