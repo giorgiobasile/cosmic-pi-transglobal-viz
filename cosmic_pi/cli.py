@@ -62,13 +62,20 @@ def export(
     influxdb_url: Annotated[
         str, typer.Option(help="InfluxDB URL")
     ] = "http://localhost:8086",
+    db: Annotated[
+        str,
+        typer.Option(
+            help="InfluxDB database name (overrides default per-dataset names)"
+        ),
+    ] = "",
     overwrite: Annotated[
         bool, typer.Option(help="Re-export parquet files even if they exist")
     ] = False,
 ):
     """Export data from InfluxDB to GeoParquet.
 
-    Requires a running InfluxDB with restored backups ('cosmic-pi ingest').
+    Works with any InfluxDB instance containing CosmicPiV1.8.1 measurements.
+    Use --influxdb-url and --db to point at an existing installation.
     """
     import requests
 
@@ -77,7 +84,8 @@ def export(
     except requests.ConnectionError:
         raise SystemExit(
             f"Error: Cannot connect to InfluxDB at {influxdb_url}.\n"
-            "Run 'cosmic-pi ingest' first."
+            "Run 'cosmic-pi ingest' to start a local instance, or use\n"
+            "--influxdb-url to point at an existing InfluxDB installation."
         )
 
     from .ingest import export_all
@@ -87,6 +95,7 @@ def export(
         dataset=dataset,
         kind=kind,
         influxdb_url=influxdb_url,
+        db_override=db or None,
         overwrite=overwrite,
     )
 

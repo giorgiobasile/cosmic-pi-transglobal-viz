@@ -66,6 +66,12 @@ Exports from the running InfluxDB to [GeoParquet](https://geoparquet.org/) files
 uv run cosmic-pi export
 ```
 
+If you already have the data in your own InfluxDB instance, you can export directly without running `ingest`:
+
+```bash
+uv run cosmic-pi export --influxdb-url http://your-host:8086 --db your_database_name
+```
+
 ### 4. Stop InfluxDB
 
 ```bash

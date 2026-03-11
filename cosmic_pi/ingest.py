@@ -214,6 +214,7 @@ def export_all(
     dataset: str = "all",
     kind: str = "all",
     influxdb_url: str = INFLUXDB_URL,
+    db_override: str | None = None,
     overwrite: bool = False,
 ):
     existing = [p for p in _all_parquet_files(parquet_dir) if p.exists()]
@@ -229,17 +230,19 @@ def export_all(
         print("Exporting sensor data to GeoParquet...")
         for name, cfg in SENSOR_DATASETS.items():
             if dataset in ("all", name):
+                db = db_override or cfg["db"]
                 output = str(parquet_dir / Path(cfg["output"]).name)
-                print(f"  {name} ({cfg['db']})...")
-                export_dataset(influxdb_url, cfg["db"], output, SENSOR_CONFIG)
+                print(f"  {name} ({db})...")
+                export_dataset(influxdb_url, db, output, SENSOR_CONFIG)
 
     if kind in ("all", "freq"):
         print("Exporting freq data to GeoParquet...")
         for name, cfg in FREQ_DATASETS.items():
             if dataset in ("all", name):
+                db = db_override or cfg["db"]
                 output = str(parquet_dir / Path(cfg["output"]).name)
-                print(f"  {name} ({cfg['db']})...")
-                export_dataset(influxdb_url, cfg["db"], output, FREQ_CONFIG)
+                print(f"  {name} ({db})...")
+                export_dataset(influxdb_url, db, output, FREQ_CONFIG)
 
 
 def teardown():
