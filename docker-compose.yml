@@ -1,0 +1,23 @@
+services:
+  influxdb:
+    image: influxdb:1.8
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb
+      - ./input:/backups:ro
+    environment:
+      - INFLUXDB_DATA_CACHE_MAX_MEMORY_SIZE=2g
+      - INFLUXDB_DATA_MAX_SERIES_PER_DATABASE=0
+    deploy:
+      resources:
+        limits:
+          memory: 8g
+    healthcheck:
+      test: ["CMD", "influx", "-execute", "SHOW DATABASES"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  influxdb-data:

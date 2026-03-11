@@ -1,5 +1,5 @@
 [project]
-name = "cosmic-pi-polar-viz"
+name = "cosmic-pi-transglobal-viz"
 version = "0.1.0"
 description = "Polar stereographic visualization of cosmic ray muon measurements collected during the Transglobal Car Expedition using Cosmic Pi detectors."
 readme = "README.md"
@@ -7,6 +7,9 @@ requires-python = ">=3.12"
 dependencies = [
     "cartopy>=0.25.0",
     "geopandas>=1.1.2",
+    "pyarrow>=19.0.0",
+    "python-geohash>=0.8.5",
+    "requests>=2.32.0",
     "scipy>=1.14.0",
 ]
 
