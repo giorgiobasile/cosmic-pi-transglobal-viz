@@ -42,49 +42,26 @@ The project is packaged as a [Typer](https://typer.tiangolo.com/) CLI managed wi
 uv run cosmic-pi --help
 ```
 
-### 1. Download datasets
+### From Zenodo backups (full pipeline)
+
+If you're starting from the raw Zenodo zip files and don't have InfluxDB set up:
 
 ```bash
-uv run cosmic-pi download
+uv run cosmic-pi download                # download zips from Zenodo (~7.4 GB)
+uv run cosmic-pi ingest                  # extract, start InfluxDB (Docker), restore backups
+uv run cosmic-pi export                  # export to GeoParquet
+uv run cosmic-pi stop                    # stop InfluxDB when done
+uv run cosmic-pi viz                     # generate visualization
 ```
 
-Downloads the two zip files from [Zenodo](https://zenodo.org/) (~7.4 GB total) into `input/`. Skips files already present.
+### From an existing InfluxDB
 
-### 2. Ingest data
-
-Requires [Docker](https://www.docker.com/). Extracts zip backups, starts InfluxDB, and restores the databases. Data is persisted locally so re-runs skip the restore step.
-
-```bash
-uv run cosmic-pi ingest
-```
-
-### 3. Export to GeoParquet
-
-Exports from the running InfluxDB to [GeoParquet](https://geoparquet.org/) files in `parquet/`. Skips if files already exist (use `--overwrite` to force).
-
-```bash
-uv run cosmic-pi export
-```
-
-If you already have the data in your own InfluxDB instance, you can export directly without running `ingest`:
+If you already have the data in a running InfluxDB instance, skip straight to export:
 
 ```bash
 uv run cosmic-pi export --influxdb-url http://your-host:8086 --db your_database_name
-```
-
-### 4. Stop InfluxDB
-
-```bash
-uv run cosmic-pi stop
-```
-
-### 5. Generate visualization
-
-```bash
 uv run cosmic-pi viz
 ```
-
-Produces `cosmic_pi_transglobal_exp.png` with north and south polar stereographic projections side by side.
 
 ### Other commands
 
