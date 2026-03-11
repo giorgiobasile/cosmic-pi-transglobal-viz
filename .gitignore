@@ -291,6 +291,5 @@ pyrightconfig.json
 # Claude user-specific settings
 .claude/
 
-# Input/Output project folders
+# Input project folder
 input/
-output/

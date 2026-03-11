@@ -5,43 +5,85 @@ Polar stereographic visualization of cosmic ray muon measurements from the Trans
 ## Project structure
 
 ```
-main.py                            # Visualization script — reads GeoParquet, produces polar maps
-scripts/ingest.sh                  # Full data pipeline: extract zips → InfluxDB → GeoParquet → teardown
-scripts/export_geoparquet.py       # Export sensor data (CosmicPiV1.8.1) to GeoParquet
-scripts/export_freq_geoparquet.py  # Export freq data (CosmicPiV1.8.1_freq) to GeoParquet
-docker-compose.yml                 # InfluxDB 1.8 container (8GB memory limit)
+cosmic_pi/                         # Python package
+  cli.py                           # Typer CLI — ingest, export, viz commands
+  ingest.py                        # Docker orchestration (extract, restore, export, teardown)
+  export_common.py                 # Shared InfluxDB/GeoParquet export infrastructure
+  export_sensor.py                 # Sensor-specific export config (CosmicPiV1.8.1)
+  export_freq.py                   # Freq-specific export config (CosmicPiV1.8.1_freq)
+  viz.py                           # Visualization — data loading, transforms, plotting
+docker-compose.yml                 # InfluxDB 1.8 container (8GB memory limit, bind-mount volume)
 input/                             # Data directory (gitignored)
   *.zip                            # Raw InfluxDB 1.x portable backups from Zenodo
+  influxdb-data/                   # Persisted InfluxDB data (survives container restarts)
   north.parquet                    # Sensor GeoParquet — 44.9M rows, ~1GB
   south.parquet                    # Sensor GeoParquet — 9.6M rows, ~164MB
   north_freq.parquet               # Freq GeoParquet — 13.3M rows, ~120MB
   south_freq.parquet               # Freq GeoParquet — 2.7M rows, ~30MB
 output/                            # Output directory (gitignored)
-  cosmic_pi_transglobal_exp.png          # All data version
-  cosmic_pi_transglobal_exp_no_eu.png  # EU bounding box filtered out
+  cosmic_pi_transglobal_exp.png          # Polar map visualization
+```
+
+## Commands
+
+```bash
+# Download datasets from Zenodo (~7.4 GB)
+uv run cosmic-pi download
+
+# Full data pipeline (requires Docker; re-runs skip restore if data persists)
+uv run cosmic-pi ingest
+
+# Just the export step (requires running InfluxDB)
+uv run cosmic-pi export
+uv run cosmic-pi export --dataset north --kind sensor
+
+# Generate visualization (requires input/*.parquet)
+uv run cosmic-pi viz
+
+# Remove persisted InfluxDB data
+uv run cosmic-pi clean
 ```
 
 ## Data pipeline
 
-1. `./scripts/ingest.sh` runs the full pipeline (requires Docker):
+1. `cosmic-pi ingest` runs the full pipeline (requires Docker):
    - Extracts zip backups if needed
-   - Starts InfluxDB 1.8 container
-   - Restores portable backups: `cosmicpiglobal` → `cosmicpi_north`, `cosmicpilocal` → `cosmicpi_south`
+   - Starts InfluxDB 1.8 container (bind-mount volume at `input/influxdb-data/`)
+   - Restores portable backups (skipped if databases already exist)
    - Exports to GeoParquet via weekly-chunked HTTP CSV streaming
    - Verifies exported row counts match InfluxDB exactly
-   - Tears down container and volumes
+   - Stops container (data persists for faster re-runs; `cosmic-pi clean` to remove)
 
-2. `uv run python main.py` reads the parquet files and generates the visualization
+2. `cosmic-pi viz` reads the parquet files and generates the visualization
 
 ## Data details
 
 ### InfluxDB source
-- Measurement: `CosmicPiV1.8.1` (also `CosmicPiV1.6.1` exists but unused)
-- Frequency measurement: `CosmicPiV1.8.1_freq` (event_count + geohash → decoded to lat/lon)
-- Tags: `id` (device ID)
-- Fields: `Accelx`, `Accely`, `Accelz`, `Alt`, `Hum`, `Magx`, `Magy`, `Magz`, `Press`, `Temp`, `lat`, `lon`
-- North backup source db: `cosmicpiglobal`
-- South backup source db: `cosmicpilocal`
+- North backup source db: `cosmicpiglobal` → restored as `cosmicpi_north`
+- South backup source db: `cosmicpilocal` → restored as `cosmicpi_south`
+- North has 72 devices (mostly stationary); south has 2. Expedition devices identified by geographic spread.
+
+**`CosmicPiV1.8.1`** — environment stream (~5 readings/sec):
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `time` | timestamp | Nanosecond precision |
+| `id` | tag | Device serial number |
+| `lat`, `lon` | field (float) | GPS position |
+| `Temp`, `Press`, `Hum`, `Alt` | field (float) | Weather sensors |
+| `Accelx/y/z` | field (float) | Accelerometer |
+| `Magx/y/z` | field (float) | Magnetometer |
+
+**`CosmicPiV1.8.1_freq`** — cosmic ray event stream:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `time` | timestamp | Nanosecond precision |
+| `id` | tag | Device serial number |
+| `event_count` | field (float) | Muon detections in the interval |
+| `geohash` | field (string) | Location as geohash (decoded to lat/lon during export) |
+
+Two separate measurements because environment sensors sample at fixed 5 Hz while muon detections are event-driven.
 
 ### GeoParquet schema
 - `time` (datetime64[ns]), `Accelx..z`, `Alt`, `Hum`, `Magx..z`, `Press`, `Temp` (float64), `id` (str), `tags` (str), `geometry` (Point, EPSG:4326)
@@ -61,32 +103,18 @@ output/                            # Output directory (gitignored)
 - **Manual GeoParquet metadata injection** because pyarrow doesn't know about geometry; we serialize to WKB and add the `geo` metadata key ourselves
 - **Row count verification** built into export script — exits non-zero on mismatch
 
-## Commands
-
-```bash
-# Full data pipeline (one-time, requires Docker)
-./scripts/ingest.sh
-
-# Generate visualization (requires input/*.parquet)
-uv run python main.py
-
-# Just the export step (requires running InfluxDB)
-uv run python scripts/export_geoparquet.py
-```
-
 ## Visualization details
 
-- **Two output versions**: `polar_maps.png` (all data) and `polar_maps_no_eu.png` (EU bbox 35-72°N, -10-40°E filtered out)
 - **All data on both hemispheres**: both expedition routes and all muon rates are plotted on both maps; Cartopy clips to visible extent
 - **Expedition devices**: North: `["202481593594661", "202481596047885"]`, South: `"49269301902064"`
-- **Per-device route colors**: darkblue (4661), lime (7885), magenta (south) — drawn in that z-order
+- **Per-device route colors**: darkblue (4661), green (7885), magenta (south) — drawn in that z-order
 - **Route downsampling**: stride-sample every 500th point, split by device to avoid interpolation artifacts
 - **Freq resampling**: hourly mean of event_count (not sum — event_count is "events in this second", mean gives comparable rate)
 - **Projections**: NorthPolarStereo(central_longitude=-170), SouthPolarStereo(central_longitude=10) — Americas bridge the inner edges
-- **Colormap**: truncated OrRd (30-100% range) with 5th/95th percentile clipping
+- **Colormap**: truncated YlOrRd (20-100% range) with 5th/95th percentile clipping
 - **Data filtering**: only bogus 1970 timestamps removed; CERN/Europe data kept in full version
 - **CERN artifact**: south device logged at CERN (46.27°N, 6.27°E) before shipping to Cape Town — causes straight line across Africa in full version
 
 ## Dependencies
 
-Managed with `uv`. Key packages: `geopandas`, `cartopy`, `pyarrow`, `requests`, `scipy`.
+Managed with `uv`. Key packages: `geopandas`, `cartopy`, `pyarrow`, `requests`, `scipy`, `typer`.
