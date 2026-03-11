@@ -21,8 +21,8 @@ FLOAT_COLS = [
 ]
 
 DATASETS = {
-    "north": {"db": "cosmicpi_north", "output": "input/north.parquet"},
-    "south": {"db": "cosmicpi_south", "output": "input/south.parquet"},
+    "north": {"db": "cosmicpi_north", "output": "parquet/cosmic_pi_north_pole.parquet"},
+    "south": {"db": "cosmicpi_south", "output": "parquet/cosmic_pi_south_pole.parquet"},
 }
 
 

@@ -294,5 +294,8 @@ pyrightconfig.json
 # Input project folder
 input/
 
+# Parquet data files
+parquet/
+
 # IDE
 .idea/

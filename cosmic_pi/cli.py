@@ -40,9 +40,9 @@ def ingest(
 
 @app.command()
 def export(
-    input_dir: Annotated[
+    parquet_dir: Annotated[
         Path, typer.Option(help="Output directory for parquet files")
-    ] = Path("input"),
+    ] = Path("parquet"),
     dataset: Annotated[
         str, typer.Option(help="Which dataset: north, south, or all")
     ] = "all",
@@ -76,12 +76,12 @@ def export(
     if kind in ("all", "sensor"):
         for name, cfg in SENSOR_DATASETS.items():
             if dataset in ("all", name):
-                output = str(input_dir / Path(cfg["output"]).name)
+                output = str(parquet_dir / Path(cfg["output"]).name)
                 configs.append((name, "sensor", cfg["db"], output, SENSOR_CONFIG))
     if kind in ("all", "freq"):
         for name, cfg in FREQ_DATASETS.items():
             if dataset in ("all", name):
-                output = str(input_dir / Path(cfg["output"]).name)
+                output = str(parquet_dir / Path(cfg["output"]).name)
                 configs.append((name, "freq", cfg["db"], output, FREQ_CONFIG))
 
     for name, kind_label, db, output, config in configs:
@@ -91,9 +91,9 @@ def export(
 
 @app.command()
 def viz(
-    input_dir: Annotated[
+    parquet_dir: Annotated[
         Path, typer.Option(help="Directory with parquet files")
-    ] = Path("input"),
+    ] = Path("parquet"),
     output_dir: Annotated[Path, typer.Option(help="Output directory for PNGs")] = Path(
         "output"
     ),
@@ -101,7 +101,7 @@ def viz(
     """Generate polar map visualizations from GeoParquet data."""
     from .viz import generate
 
-    generate(input_dir=input_dir, output_dir=output_dir)
+    generate(input_dir=parquet_dir, output_dir=output_dir)
 
 
 @app.command()

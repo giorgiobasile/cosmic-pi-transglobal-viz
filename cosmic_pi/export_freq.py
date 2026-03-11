@@ -7,8 +7,14 @@ import pandas as pd
 from .export_common import ExportConfig
 
 DATASETS = {
-    "north": {"db": "cosmicpi_north", "output": "input/north_freq.parquet"},
-    "south": {"db": "cosmicpi_south", "output": "input/south_freq.parquet"},
+    "north": {
+        "db": "cosmicpi_north",
+        "output": "parquet/cosmic_pi_north_pole_freq.parquet",
+    },
+    "south": {
+        "db": "cosmicpi_south",
+        "output": "parquet/cosmic_pi_south_pole_freq.parquet",
+    },
 }
 
 

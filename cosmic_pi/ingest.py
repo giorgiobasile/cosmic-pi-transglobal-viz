@@ -164,16 +164,17 @@ def restore_backups():
             print(f"  Restored {r['target_db']}.")
 
 
-def export_all(input_dir: Path):
+def export_all(parquet_dir: Path = Path("parquet")):
+    parquet_dir.mkdir(parents=True, exist_ok=True)
     print("Exporting sensor data to GeoParquet...")
     for name, cfg in SENSOR_DATASETS.items():
-        output = str(input_dir / Path(cfg["output"]).name)
+        output = str(parquet_dir / Path(cfg["output"]).name)
         print(f"  {name} ({cfg['db']})...")
         export_dataset(INFLUXDB_URL, cfg["db"], output, SENSOR_CONFIG)
 
     print("Exporting freq data to GeoParquet...")
     for name, cfg in FREQ_DATASETS.items():
-        output = str(input_dir / Path(cfg["output"]).name)
+        output = str(parquet_dir / Path(cfg["output"]).name)
         print(f"  {name} ({cfg['db']})...")
         export_dataset(INFLUXDB_URL, cfg["db"], output, FREQ_CONFIG)
 
@@ -205,7 +206,7 @@ def run(
     start_influxdb()
     wait_for_influxdb()
     restore_backups()
-    export_all(input_dir)
+    export_all()
     if not skip_teardown:
         teardown()
-    print(f"Done. GeoParquet files are in {input_dir}/")
+    print("Done. GeoParquet files are in parquet/")

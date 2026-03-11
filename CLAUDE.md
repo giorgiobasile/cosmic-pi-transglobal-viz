@@ -16,12 +16,13 @@ docker-compose.yml                 # InfluxDB 1.8 container (8GB memory limit, b
 input/                             # Data directory (gitignored)
   *.zip                            # Raw InfluxDB 1.x portable backups from Zenodo
   influxdb-data/                   # Persisted InfluxDB data (survives container restarts)
-  north.parquet                    # Sensor GeoParquet — 44.9M rows, ~1GB
-  south.parquet                    # Sensor GeoParquet — 9.6M rows, ~164MB
-  north_freq.parquet               # Freq GeoParquet — 13.3M rows, ~120MB
-  south_freq.parquet               # Freq GeoParquet — 2.7M rows, ~30MB
-output/                            # Output directory (gitignored)
-  cosmic_pi_transglobal_exp.png          # Polar map visualization
+parquet/                           # GeoParquet files (gitignored)
+  cosmic_pi_north_pole.parquet     # Sensor GeoParquet — 44.9M rows, ~1GB
+  cosmic_pi_south_pole.parquet     # Sensor GeoParquet — 9.6M rows, ~164MB
+  cosmic_pi_north_pole_freq.parquet # Freq GeoParquet — 13.3M rows, ~120MB
+  cosmic_pi_south_pole_freq.parquet # Freq GeoParquet — 2.7M rows, ~30MB
+output/                            # Output directory
+  cosmic_pi_transglobal_exp.png    # Polar map visualization (tracked in git)
 ```
 
 ## Commands
@@ -37,7 +38,7 @@ uv run cosmic-pi ingest
 uv run cosmic-pi export
 uv run cosmic-pi export --dataset north --kind sensor
 
-# Generate visualization (requires input/*.parquet)
+# Generate visualization (requires parquet/*.parquet)
 uv run cosmic-pi viz
 
 # Remove persisted InfluxDB data

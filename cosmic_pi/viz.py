@@ -31,14 +31,14 @@ def load_route_data(
 ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
     """Load and filter north/south expedition route data."""
     north = gpd.read_parquet(
-        input_dir / "north.parquet", columns=["time", "id", "geometry"]
+        input_dir / "cosmic_pi_north_pole.parquet", columns=["time", "id", "geometry"]
     )
     north = north[north["id"].isin(NORTH_DEVICE_IDS)]
     north = north[north["time"] >= "2023-01-01"]
     north = north.sort_values("time")
 
     south = gpd.read_parquet(
-        input_dir / "south.parquet", columns=["time", "id", "geometry"]
+        input_dir / "cosmic_pi_south_pole.parquet", columns=["time", "id", "geometry"]
     )
     south = south[south["id"] == SOUTH_DEVICE_ID]
     south = south.sort_values("time")
@@ -48,10 +48,10 @@ def load_route_data(
 
 def load_freq_data(input_dir: Path) -> gpd.GeoDataFrame:
     """Load, resample to hourly means, and combine freq data."""
-    north = gpd.read_parquet(input_dir / "north_freq.parquet")
+    north = gpd.read_parquet(input_dir / "cosmic_pi_north_pole_freq.parquet")
     north = north[north["id"].isin(NORTH_DEVICE_IDS)]
 
-    south = gpd.read_parquet(input_dir / "south_freq.parquet")
+    south = gpd.read_parquet(input_dir / "cosmic_pi_south_pole_freq.parquet")
     south = south[south["id"] == SOUTH_DEVICE_ID]
 
     north_h = _resample_freq(north)
@@ -196,15 +196,15 @@ def plot_polar_maps(
 
 
 def generate(
-    input_dir: Path = Path("input"),
+    input_dir: Path = Path("parquet"),
     output_dir: Path = Path("output"),
 ):
     """Generate polar map visualizations from GeoParquet data."""
     required = [
-        "north.parquet",
-        "south.parquet",
-        "north_freq.parquet",
-        "south_freq.parquet",
+        "cosmic_pi_north_pole.parquet",
+        "cosmic_pi_south_pole.parquet",
+        "cosmic_pi_north_pole_freq.parquet",
+        "cosmic_pi_south_pole_freq.parquet",
     ]
     missing = [f for f in required if not (input_dir / f).exists()]
     if missing:
