@@ -1,13 +1,15 @@
-"""Export InfluxDB data to GeoParquet files.
+"""Shared infrastructure for exporting InfluxDB data to GeoParquet.
 
-Streams CSV from the InfluxDB HTTP API in weekly time chunks
-and writes GeoParquet incrementally.
+Provides the common export loop, InfluxDB query helpers, and GeoParquet
+metadata handling used by both sensor and frequency exports.
 """
 
 import csv
 import io
 import json
 import sys
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 import geopandas as gpd
@@ -16,58 +18,43 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import requests
 
-INFLUXDB_URL = "http://localhost:8086"
 BATCH_SIZE = 200_000
-MEASUREMENT = "CosmicPiV1.8.1"
-
-DATASETS = {
-    "north": {"db": "cosmicpi_north", "output": "input/north.parquet"},
-    "south": {"db": "cosmicpi_south", "output": "input/south.parquet"},
-}
-
-FLOAT_COLS = [
-    "Accelx",
-    "Accely",
-    "Accelz",
-    "Alt",
-    "Hum",
-    "Magx",
-    "Magy",
-    "Magz",
-    "Press",
-    "Temp",
-    "lat",
-    "lon",
-]
 
 
-def influxql(db: str, query: str) -> dict:
-    """Execute an InfluxQL query and return JSON results."""
-    resp = requests.get(
-        f"{INFLUXDB_URL}/query",
-        params={"db": db, "q": query},
-    )
+@dataclass
+class ExportConfig:
+    """Configuration for a dataset export."""
+
+    measurement: str
+    count_field: str
+    where_clause: str
+    rows_to_gdf: Callable[[list[list[str]], list[str]], gpd.GeoDataFrame]
+
+
+def influxql(url: str, db: str, query: str) -> dict:
+    resp = requests.get(f"{url}/query", params={"db": db, "q": query})
     resp.raise_for_status()
     return resp.json()
 
 
-def get_expected_count(db: str) -> int:
-    """Get the expected row count from InfluxDB."""
-    query = f'SELECT count(lat) FROM "{MEASUREMENT}" WHERE lat != 0 AND lon != 0'
-    result = influxql(db, query)
+def get_expected_count(
+    url: str, db: str, measurement: str, count_field: str, where_clause: str = ""
+) -> int:
+    where = f" WHERE {where_clause}" if where_clause else ""
+    query = f'SELECT count({count_field}) FROM "{measurement}"{where}'
+    result = influxql(url, db, query)
     values = result["results"][0]["series"][0]["values"]
     return int(values[0][1])
 
 
-def get_time_range(db: str) -> tuple[str, str]:
-    """Get the min/max timestamps from InfluxDB, returned as date strings."""
-    q_first = f'SELECT first(lat) FROM "{MEASUREMENT}" WHERE lat != 0 AND lon != 0'
-    q_last = f'SELECT last(lat) FROM "{MEASUREMENT}" WHERE lat != 0 AND lon != 0'
-    r_first = influxql(db, q_first)
-    r_last = influxql(db, q_last)
+def get_time_range(
+    url: str, db: str, measurement: str, field: str, where_clause: str = ""
+) -> tuple[str, str]:
+    where = f" WHERE {where_clause}" if where_clause else ""
+    r_first = influxql(url, db, f'SELECT first({field}) FROM "{measurement}"{where}')
+    r_last = influxql(url, db, f'SELECT last({field}) FROM "{measurement}"{where}')
     t_first = r_first["results"][0]["series"][0]["values"][0][0]
     t_last = r_last["results"][0]["series"][0]["values"][0][0]
-    # Parse and add padding: 1 day before first, 1 day after last
     dt_first = datetime.fromisoformat(t_first.replace("Z", "+00:00")) - timedelta(
         days=1
     )
@@ -84,9 +71,9 @@ def week_ranges(start: str, end: str):
         cur = nxt
 
 
-def query_csv_stream(db: str, query: str) -> requests.Response:
+def query_csv_stream(url: str, db: str, query: str) -> requests.Response:
     resp = requests.get(
-        f"{INFLUXDB_URL}/query",
+        f"{url}/query",
         params={"db": db, "q": query},
         headers={"Accept": "application/csv"},
         stream=True,
@@ -96,31 +83,10 @@ def query_csv_stream(db: str, query: str) -> requests.Response:
     return resp
 
 
-def rows_to_gdf(rows: list[list[str]], columns: list[str]) -> gpd.GeoDataFrame:
-    df = pd.DataFrame(rows, columns=columns)
-    df["time"] = pd.to_datetime(pd.to_numeric(df["time"]), unit="ns")
-    for col in FLOAT_COLS:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-
-    geometry = gpd.points_from_xy(df["lon"], df["lat"])
-    gdf = gpd.GeoDataFrame(df, geometry=geometry, crs="EPSG:4326")
-    gdf = gdf.drop(columns=["lat", "lon"], errors="ignore")
-    return gdf
-
-
 def gdf_to_arrow(gdf: gpd.GeoDataFrame) -> pa.Table:
     df = pd.DataFrame(gdf.drop(columns="geometry"))
     df["geometry"] = gdf.geometry.to_wkb()
     return pa.Table.from_pandas(df, preserve_index=False)
-
-
-def write_batch(writer_holder, gdf, output_path, geo_meta_holder):
-    table = gdf_to_arrow(gdf)
-    if writer_holder[0] is None:
-        geo_meta_holder[0] = build_geo_metadata(gdf)
-        writer_holder[0] = pq.ParquetWriter(output_path, table.schema)
-    writer_holder[0].write_table(table)
 
 
 def build_geo_metadata(gdf: gpd.GeoDataFrame) -> bytes:
@@ -146,12 +112,24 @@ def inject_geo_metadata(path: str, geo_metadata: bytes):
     pq.write_table(table, path)
 
 
-def export_dataset(db: str, output_path: str):
-    """Export a dataset, querying the full time range from InfluxDB."""
-    expected = get_expected_count(db)
+def write_batch(writer_holder, gdf, output_path, geo_meta_holder):
+    table = gdf_to_arrow(gdf)
+    if writer_holder[0] is None:
+        geo_meta_holder[0] = build_geo_metadata(gdf)
+        writer_holder[0] = pq.ParquetWriter(output_path, table.schema)
+    writer_holder[0].write_table(table)
+
+
+def export_dataset(url: str, db: str, output_path: str, config: ExportConfig):
+    """Export a dataset from InfluxDB to GeoParquet."""
+    expected = get_expected_count(
+        url, db, config.measurement, config.count_field, config.where_clause
+    )
     print(f"  Expected rows: {expected}")
 
-    start, end = get_time_range(db)
+    start, end = get_time_range(
+        url, db, config.measurement, config.count_field, config.where_clause
+    )
     print(f"  Time range: {start} → {end}")
 
     writer = [None]
@@ -159,14 +137,15 @@ def export_dataset(db: str, output_path: str):
     columns = None
     total = 0
 
+    where = f" AND {config.where_clause}" if config.where_clause else ""
+
     for w_start, w_end in week_ranges(start, end):
         query = f"""
 SELECT *
-FROM "{MEASUREMENT}"
-WHERE lat != 0 AND lon != 0
-  AND time >= '{w_start}' AND time < '{w_end}'
+FROM "{config.measurement}"
+WHERE time >= '{w_start}' AND time < '{w_end}'{where}
 """
-        resp = query_csv_stream(db, query)
+        resp = query_csv_stream(url, db, query)
         lines = resp.iter_lines(decode_unicode=True)
         header_line = next(lines, None)
         if header_line is None or not header_line.strip():
@@ -185,7 +164,7 @@ WHERE lat != 0 AND lon != 0
             batch_rows.append(row[1:])
 
             if len(batch_rows) >= BATCH_SIZE:
-                gdf = rows_to_gdf(batch_rows, columns)
+                gdf = config.rows_to_gdf(batch_rows, columns)
                 write_batch(writer, gdf, output_path, geo_meta)
                 total += len(batch_rows)
                 batch_rows = []
@@ -193,7 +172,7 @@ WHERE lat != 0 AND lon != 0
         resp.close()
 
         if batch_rows:
-            gdf = rows_to_gdf(batch_rows, columns)
+            gdf = config.rows_to_gdf(batch_rows, columns)
             write_batch(writer, gdf, output_path, geo_meta)
             total += len(batch_rows)
 
@@ -211,13 +190,3 @@ WHERE lat != 0 AND lon != 0
         sys.exit(1)
     else:
         print(f"  Verified: {total} == {expected}")
-
-
-def main():
-    for name, cfg in DATASETS.items():
-        print(f"Exporting {name} ({cfg['db']})...")
-        export_dataset(cfg["db"], cfg["output"])
-
-
-if __name__ == "__main__":
-    main()

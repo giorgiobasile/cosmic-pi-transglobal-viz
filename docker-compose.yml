@@ -4,7 +4,7 @@ services:
     ports:
       - "8086:8086"
     volumes:
-      - influxdb-data:/var/lib/influxdb
+      - ./input/influxdb-data:/var/lib/influxdb
       - ./input:/backups:ro
     environment:
       - INFLUXDB_DATA_CACHE_MAX_MEMORY_SIZE=2g
@@ -18,6 +18,3 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-
-volumes:
-  influxdb-data:

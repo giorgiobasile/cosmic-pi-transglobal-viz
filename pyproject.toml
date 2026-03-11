@@ -11,7 +11,18 @@ dependencies = [
     "python-geohash>=0.8.5",
     "requests>=2.32.0",
     "scipy>=1.14.0",
+    "typer>=0.15.0",
 ]
+
+[project.scripts]
+cosmic-pi = "cosmic_pi.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["cosmic_pi"]
 
 [tool.ruff.lint.pylint]
 max-args = 6
