@@ -52,7 +52,7 @@ pre-commit install
 
 ### From Zenodo backups (full pipeline)
 
-If you're starting from the raw Zenodo zip files and don't have InfluxDB set up:
+If you're starting from the raw Zenodo zip files and don't have InfluxDB set up (requires [Docker](https://www.docker.com/)):
 
 ```bash
 uv run cosmic-pi download                # download zips from Zenodo (~7.4 GB)
