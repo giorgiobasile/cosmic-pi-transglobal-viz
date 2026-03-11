@@ -293,3 +293,6 @@ pyrightconfig.json
 
 # Input project folder
 input/
+
+# IDE
+.idea/
