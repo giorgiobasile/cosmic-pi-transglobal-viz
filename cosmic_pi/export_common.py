@@ -1,12 +1,11 @@
 """Shared infrastructure for exporting InfluxDB data to GeoParquet.
 
 Provides the common export loop, InfluxDB query helpers, and GeoParquet
-metadata handling used by both sensor and frequency exports.
+writing used by both sensor and frequency exports.
 """
 
 import csv
 import io
-import json
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -14,8 +13,6 @@ from datetime import datetime, timedelta
 
 import geopandas as gpd
 import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
 import requests
 
 BATCH_SIZE = 200_000
@@ -83,43 +80,6 @@ def query_csv_stream(url: str, db: str, query: str) -> requests.Response:
     return resp
 
 
-def gdf_to_arrow(gdf: gpd.GeoDataFrame) -> pa.Table:
-    df = pd.DataFrame(gdf.drop(columns="geometry"))
-    df["geometry"] = gdf.geometry.to_wkb()
-    return pa.Table.from_pandas(df, preserve_index=False)
-
-
-def build_geo_metadata(gdf: gpd.GeoDataFrame) -> bytes:
-    geo = {
-        "version": "1.0.0",
-        "primary_column": "geometry",
-        "columns": {
-            "geometry": {
-                "encoding": "WKB",
-                "geometry_types": ["Point"],
-                "crs": json.loads(gdf.crs.to_json()),
-            }
-        },
-    }
-    return json.dumps(geo).encode("utf-8")
-
-
-def inject_geo_metadata(path: str, geo_metadata: bytes):
-    table = pq.read_table(path)
-    existing = table.schema.metadata or {}
-    existing[b"geo"] = geo_metadata
-    table = table.replace_schema_metadata(existing)
-    pq.write_table(table, path)
-
-
-def write_batch(writer_state, gdf, output_path, geo_meta_state):
-    table = gdf_to_arrow(gdf)
-    if writer_state[0] is None:
-        geo_meta_state[0] = build_geo_metadata(gdf)
-        writer_state[0] = pq.ParquetWriter(output_path, table.schema)
-    writer_state[0].write_table(table)
-
-
 def export_dataset(url: str, db: str, output_path: str, config: ExportConfig):
     """Export a dataset from InfluxDB to GeoParquet."""
     expected = get_expected_count(
@@ -132,8 +92,7 @@ def export_dataset(url: str, db: str, output_path: str, config: ExportConfig):
     )
     print(f"  Time range: {start} → {end}")
 
-    writer = [None]
-    geo_meta = [None]
+    gdfs = []
     columns = None
     total = 0
 
@@ -164,24 +123,23 @@ WHERE time >= '{w_start}' AND time < '{w_end}'{where}
             batch_rows.append(row[1:])
 
             if len(batch_rows) >= BATCH_SIZE:
-                gdf = config.rows_to_gdf(batch_rows, columns)
-                write_batch(writer, gdf, output_path, geo_meta)
+                gdfs.append(config.rows_to_gdf(batch_rows, columns))
                 total += len(batch_rows)
                 batch_rows = []
 
         resp.close()
 
         if batch_rows:
-            gdf = config.rows_to_gdf(batch_rows, columns)
-            write_batch(writer, gdf, output_path, geo_meta)
+            gdfs.append(config.rows_to_gdf(batch_rows, columns))
             total += len(batch_rows)
 
         if total > 0:
             print(f"  {total} rows through {w_end[:10]}")
 
-    if writer[0] is not None:
-        writer[0].close()
-        inject_geo_metadata(output_path, geo_meta[0])
+    if gdfs:
+        gdf = pd.concat(gdfs, ignore_index=True)
+        gdf = gpd.GeoDataFrame(gdf, geometry="geometry", crs="EPSG:4326")
+        gdf.to_parquet(output_path, schema_version="1.1.0", write_covering_bbox=True)
 
     print(f"  Exported: {total} rows → {output_path}")
 
