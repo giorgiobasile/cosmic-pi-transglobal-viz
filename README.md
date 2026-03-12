@@ -27,7 +27,7 @@ The detectors log to **InfluxDB 1.x** and the datasets are distributed as portab
 - **`CosmicPiV1.8.1`** — environment stream (~5 Hz): GPS position, temperature, pressure, humidity, altitude, accelerometer, magnetometer
 - **`CosmicPiV1.8.1_freq`** — cosmic ray events: muon detection count per interval + geohash-encoded location
 
-Data is exported to [GeoParquet](https://geoparquet.org/) for local analysis.
+Data is exported to [GeoParquet](https://geoparquet.org/) for local analysis. During export and visualization, several cleanup steps are applied: sensor rows without a GPS fix (`lat=0, lon=0`) are excluded, only the actual expedition devices are selected, and bogus timestamps are dropped.
 
 ## Usage
 

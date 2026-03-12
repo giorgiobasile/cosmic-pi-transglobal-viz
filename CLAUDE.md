@@ -89,12 +89,22 @@ Two separate measurements because environment sensors sample at fixed 5 Hz while
 
 ### GeoParquet schema
 - `time` (datetime64[ns]), `Accelx..z`, `Alt`, `Hum`, `Magx..z`, `Press`, `Temp` (float64), `id` (str), `tags` (str), `geometry` (Point, EPSG:4326)
-- Geometry built from lat/lon, filtered for `lat != 0 AND lon != 0`
-- GeoParquet metadata manually injected (WKB encoding)
+- Geometry built from lat/lon; written via `gdf.to_parquet()` with GeoParquet 1.1.0
 
 ### Time ranges
 - North: sparse data from 1970, bulk from late 2023 to mid 2024, sparse to 2027
 - South: sparse from 2021, bulk from Oct 2024 to Apr 2025
+
+### Data cleaning
+
+**During export** (`gpq-export`):
+- **Sensor: no-GPS-fix rows excluded** — `WHERE lat != 0 AND lon != 0` filters out readings before GPS acquired a fix (373,927 rows in north, 33 in south would otherwise plot at "null island" 0°N 0°E)
+- **Freq: invalid geohashes** — empty or malformed geohashes decode to `None` geometry (kept in parquet but won't plot)
+
+**During visualization** (`viz`):
+- **Expedition devices only** — north has 72 devices (mostly stationary at CERN/labs); only the 2 expedition devices are plotted. South has 2 devices; only the expedition device is used.
+- **North: pre-2023 timestamps dropped** — sparse bogus timestamps from 1970 and other artifacts excluded via `time >= 2023-01-01`
+- **Freq: zero/negative event counts dropped** — `event_count <= 0` rows removed after hourly resampling
 
 ## Key technical decisions
 
@@ -102,7 +112,6 @@ Two separate measurements because environment sensors sample at fixed 5 Hz while
 - **Weekly time-chunked queries** to avoid InfluxDB OOM — monthly/full-table queries crash even with 8GB
 - **HTTP CSV streaming** (Accept: application/csv) not JSON — much more memory efficient for large results
 - **influx_inspect export** was attempted but dumps one field per line (not grouped by timestamp), making it impractical
-- **Manual GeoParquet metadata injection** because pyarrow doesn't know about geometry; we serialize to WKB and add the `geo` metadata key ourselves
 - **Row count verification** built into export script — exits non-zero on mismatch
 
 ## Visualization details
@@ -114,7 +123,7 @@ Two separate measurements because environment sensors sample at fixed 5 Hz while
 - **Freq resampling**: hourly mean of event_count (not sum — event_count is "events in this second", mean gives comparable rate)
 - **Projections**: NorthPolarStereo(central_longitude=-170), SouthPolarStereo(central_longitude=10) — Americas bridge the inner edges
 - **Colormap**: truncated YlOrRd (20-100% range) with 5th/95th percentile clipping
-- **Data filtering**: only bogus 1970 timestamps removed; CERN/Europe data kept in full version
+- **Data filtering**: see "Data cleaning" section above; CERN/Europe data kept in full version
 - **CERN artifact**: south device logged at CERN (46.27°N, 6.27°E) before shipping to Cape Town — causes straight line across Africa in full version
 
 ## Dependencies
