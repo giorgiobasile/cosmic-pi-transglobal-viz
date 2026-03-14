@@ -15,6 +15,12 @@ Polar stereographic visualization of cosmic ray muon measurements collected duri
 - **North Pole (2024):** Across North America to the North Pole, back to Greenland
 - **South Pole (2024–2025):** Cape Town through Antarctica into South America
 
+<a href="http://www.bis-italia.it/">
+  <img src="http://www.bis-italia.it/wp-content/uploads/2015/01/BIS-Italia_logo_new_no_scritte_small.png" alt="BIS-Italia logo" height="50">
+</a>
+
+This project is a friendly collaboration between the CERN scientists behind Cosmic Pi and [BIS-Italia](http://www.bis-italia.it/), the Italian section of the [British Interplanetary Society](https://www.bis-space.com/).
+
 ## Datasets
 
 - **North Pole (2024):** [Cosmic Pi North Pole Dataset 2024](https://zenodo.org/records/13310276) — First ground-level muon measurements at the North Pole, collected traveling across North America to the North Pole and back to Greenland. Authors: James Devine (CERN), Etam Noah Messomo. [DOI: 10.5281/zenodo.13310276](https://doi.org/10.5281/zenodo.13310276)
