@@ -19,7 +19,7 @@ Polar stereographic visualization of cosmic ray muon measurements collected duri
   <img src="http://www.bis-italia.it/wp-content/uploads/2015/01/BIS-Italia_logo_new_no_scritte_small.png" alt="BIS-Italia logo" height="50">
 </a>
 
-This project is a friendly collaboration between the CERN scientists behind Cosmic Pi and [BIS-Italia](http://www.bis-italia.it/), the Italian section of the [British Interplanetary Society](https://www.bis-space.com/).
+This project is developed by [BIS-Italia](http://www.bis-italia.it/), the Italian section of the [British Interplanetary Society](https://www.bis-space.com/), in friendly collaboration with [CERN](https://home.cern/).
 
 ## Datasets
 
