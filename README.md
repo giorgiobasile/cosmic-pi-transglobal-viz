@@ -15,11 +15,11 @@ Polar stereographic visualization of cosmic ray muon measurements collected duri
 - **North Pole (2024):** Across North America to the North Pole, back to Greenland
 - **South Pole (2024–2025):** Cape Town through Antarctica into South America
 
-<a href="http://www.bis-italia.it/">
-  <img src="http://www.bis-italia.it/wp-content/uploads/2015/01/BIS-Italia_logo_new_no_scritte_small.png" alt="BIS-Italia logo" height="50">
+<a href="https://www.bis-space.com/branches/bis-italia/">
+  <img src="https://www.bis-space.com/wp-content/uploads/2024/05/BIS-2022-LOGO-Italia-BRANCH-02-768x322.png" alt="BIS-Italia logo" height="50">
 </a>
 
-This project is developed by [BIS-Italia](http://www.bis-italia.it/), the Italian section of the [British Interplanetary Society](https://www.bis-space.com/), in friendly collaboration with [CERN](https://home.cern/).
+This project is part of the activities of [BIS-Italia](https://www.bis-space.com/branches/bis-italia/), the Italian branch of the [British Interplanetary Society](https://www.bis-space.com/), in friendly collaboration with [CERN](https://home.cern/).
 
 ## Datasets
 
